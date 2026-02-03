@@ -7,13 +7,11 @@ public static class CarterExtensions
 {
     public static void RegisterEndpointsFromAssemblies(this CarterConfigurator config, Assembly[] assemblies)
     {
-        foreach (var assembly in assemblies)
-        {
-            var typesImplementingICarterModule = assembly.GetTypes()
-                .Where(type => typeof(ICarterModule).IsAssignableFrom(type) && !type.IsAbstract)
-                .ToArray();
+        var moduleTypes = assemblies
+            .SelectMany(a => a.GetTypes())
+            .Where(t => typeof(ICarterModule).IsAssignableFrom(t)
+                        && t is { IsInterface: false, IsAbstract: false });
 
-            config.WithModules(typesImplementingICarterModule);
-        }
+        config.WithModules(moduleTypes.ToArray());
     }
 }
