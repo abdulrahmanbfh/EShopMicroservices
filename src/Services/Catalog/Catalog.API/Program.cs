@@ -1,24 +1,27 @@
-using BuildingBlocks.Extensions;
-
 var builder = WebApplication.CreateBuilder(args);
+
+var assembly = typeof(Program).Assembly;
 
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddCarter(configurator: config =>
-{
-    config.RegisterEndpointsFromAssemblies([typeof(Program).Assembly]);
-});
-
 builder.Services.AddMediatR(config =>
 {
-    config.RegisterServicesFromAssembly(typeof(Program).Assembly);
+    config.RegisterServicesFromAssembly(assembly);
+    config.AddOpenBehavior(typeof(ValidationBehavior<,>));
 });
 
-builder.Services.AddMarten(opt =>
+builder.Services.AddValidatorsFromAssembly(assembly);
+
+builder.Services.AddCarter(configurator: config =>
 {
-    opt.Connection(builder.Configuration.GetConnectionString("Database")!);
+    config.RegisterEndpointsFromAssemblies([assembly]);
+});
+
+builder.Services.AddMarten(options =>
+{
+    options.Connection(builder.Configuration.GetConnectionString("Database")!);
 }).UseLightweightSessions();
 
 var app = builder.Build();
