@@ -24,10 +24,14 @@ builder.Services.AddMarten(options =>
     options.Connection(builder.Configuration.GetConnectionString("Database")!);
 }).UseLightweightSessions();
 
+builder.Services.AddExceptionHandler<CustomExceptionHandler>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.MapCarter();
+
+app.UseExceptionHandler(_ => { });
 
 if (app.Environment.IsDevelopment())
 {
@@ -38,6 +42,8 @@ if (app.Environment.IsDevelopment())
         options.RoutePrefix = string.Empty; // Makes Swagger UI the root page
     });
 }
+
+
 
 
 app.Run();
