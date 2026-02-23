@@ -10,6 +10,7 @@ builder.Services.AddMediatR(config =>
 {
     config.RegisterServicesFromAssembly(assembly);
     config.AddOpenBehavior(typeof(ValidationBehavior<,>));
+    config.AddOpenBehavior(typeof(LoggingBehavior<,>));
 });
 
 builder.Services.AddValidatorsFromAssembly(assembly);
@@ -42,8 +43,5 @@ if (app.Environment.IsDevelopment())
         options.RoutePrefix = string.Empty; // Makes Swagger UI the root page
     });
 }
-
-
-
 
 app.Run();
