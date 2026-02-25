@@ -2,47 +2,79 @@ var builder = WebApplication.CreateBuilder(args);
 
 var assembly = typeof(Program).Assembly;
 
-// Add services to the container.
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Health checks setup
+builder.Services.AddHealthChecks()
+    .AddNpgSql(builder.Configuration.GetConnectionString("Database")!)
+    .AddCheck("self", () => HealthCheckResult.Healthy());
 
+// 1. Add services to the container.
+
+// Registering API documentation and Swagger support
+builder.Services.AddEndpointsApiExplorer(); // This is necessary for discovering endpoints for Swagger
+builder.Services.AddSwaggerGen(options =>
+{
+    // Explicitly add health check endpoint to Swagger
+    options.OperationFilter<HealthCheckOperationFilter>(); // Add a custom operation filter to include /health in Swagger
+}); // Swagger setup
+
+// Mediator pattern setup using MediatR
 builder.Services.AddMediatR(config =>
 {
-    config.RegisterServicesFromAssembly(assembly);
-    config.AddOpenBehavior(typeof(ValidationBehavior<,>));
-    config.AddOpenBehavior(typeof(LoggingBehavior<,>));
+    config.RegisterServicesFromAssembly(assembly); // Register MediatR handlers and services from the assembly
+    config.AddOpenBehavior(typeof(ValidationBehavior<,>)); // Add custom behaviors like validation
+    config.AddOpenBehavior(typeof(LoggingBehavior<,>)); // Add custom behaviors like logging
 });
 
-builder.Services.AddValidatorsFromAssembly(assembly);
+// FluentValidation setup
+builder.Services.AddValidatorsFromAssembly(assembly); // Registers validators from the assembly
 
+// Registering Carter for endpoint routing (similar to minimal APIs)
 builder.Services.AddCarter(configurator: config =>
 {
-    config.RegisterEndpointsFromAssemblies([assembly]);
+    config.RegisterEndpointsFromAssemblies([assembly]); // Register Carter endpoints from the assembly
 });
 
+// Marten setup for persistence
 builder.Services.AddMarten(options =>
 {
-    options.Connection(builder.Configuration.GetConnectionString("Database")!);
-}).UseLightweightSessions();
-if (builder.Environment.IsDevelopment()) builder.Services.InitializeMartenWith<CatalogInitialData>();
+    options.Connection(builder.Configuration.GetConnectionString("Database")!); // Register Marten with the database connection string
+}).UseLightweightSessions(); // Use lightweight sessions for Marten
+if (builder.Environment.IsDevelopment())
+    builder.Services.InitializeMartenWith<CatalogInitialData>(); // Initialize Marten with some initial data if in development environment
 
-builder.Services.AddExceptionHandler<CustomExceptionHandler>();
+// Exception handling setup
+builder.Services.AddExceptionHandler<CustomExceptionHandler>(); // Add custom exception handler
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-app.MapCarter();
+// 2. Configure the HTTP request pipeline.
 
-app.UseExceptionHandler(_ => { });
+
+
+// Global exception handler middleware setup
+app.UseExceptionHandler(_ => { }); // Add a global exception handler (could be customized)
+
+// 3. Swagger UI setup should be done after exception handling and health checks
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
+    // Swagger middleware is available only in Development environment
+    app.UseSwagger(); // Enable Swagger generation
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "My API v1");
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "My API v1"); // Point to the Swagger JSON
         options.RoutePrefix = string.Empty; // Makes Swagger UI the root page
     });
 }
 
-app.Run();
+// Health check middleware should be placed first so it can be accessed at all times
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+}); // Add the health check endpoint
+
+// 4. Carter's endpoints (should be placed after health checks, exception handler, and Swagger)
+app.MapCarter(); // Map the Carter endpoints
+
+// 5. Run the application
+app.Run(); // Run the app
