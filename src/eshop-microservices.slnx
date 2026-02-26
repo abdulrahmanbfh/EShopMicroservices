@@ -3,6 +3,9 @@
     <Project Path="BuildingBlocks/BuildingBlocks/BuildingBlocks.csproj" Id="dc3f61e6-01c9-49c6-97a5-dde55095e27e" />
   </Folder>
   <Folder Name="/Services/" />
+  <Folder Name="/Services/Basket/">
+    <Project Path="Services/Basket/Basket.API/Basket.API.csproj" Id="cf22e1b3-9bed-4b79-aa72-b4c1f1e580f3" />
+  </Folder>
   <Folder Name="/Services/Catalog/">
     <Project Path="Services/Catalog/Catalog.API/Catalog.API.csproj" Id="6d3cc1eb-aff6-415b-8e8f-66573286eeeb" />
   </Folder>

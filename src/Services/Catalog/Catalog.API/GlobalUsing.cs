@@ -15,5 +15,3 @@ global using FluentValidation;
 global using Catalog.API.Data;
 global using Marten.Schema;
 global using Microsoft.Extensions.Diagnostics.HealthChecks;
-global using HealthChecks.UI.Client;
-global using Microsoft.AspNetCore.Diagnostics.HealthChecks;

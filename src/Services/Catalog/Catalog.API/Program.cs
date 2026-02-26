@@ -4,6 +4,7 @@ var assembly = typeof(Program).Assembly;
 
 // Health checks setup
 builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy())
     .AddNpgSql(builder.Configuration.GetConnectionString("Database")!);
 
 // 1. Add services to the container.
