@@ -68,10 +68,27 @@ if (app.Environment.IsDevelopment())
 }
 
 // Health check middleware should be placed first so it can be accessed at all times
-app.MapHealthChecks("/health", new HealthCheckOptions
-{
-    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
-}); // Add the health check endpoint
+//app.MapHealthChecks("/health", new HealthCheckOptions
+//{
+//    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+//}).WithName("HealthCheck") // Gives it an explicit endpoint name
+//.WithTags("Health")      // Groups it in Swagger
+//.WithOpenApi();          // Pushes it to the ApiExplorer so Swagger sees it; // Add the health check endpoint
+
+app.MapGet("/health", async (HealthCheckService healthCheckService) =>
+    {
+        // Run the registered health checks manually
+        var report = await healthCheckService.CheckHealthAsync();
+
+        // Return 200 OK if healthy, or 503 Service Unavailable if not
+        return report.Status == HealthStatus.Healthy
+            ? Results.Ok(report)
+            : Results.Json(report, statusCode: StatusCodes.Status503ServiceUnavailable);
+    })
+    .WithName("HealthCheck")
+    .WithTags("Health")
+    .Produces<HealthReport>(StatusCodes.Status200OK)
+    .Produces<HealthReport>(StatusCodes.Status503ServiceUnavailable);
 
 // 4. Carter's endpoints (should be placed after health checks, exception handler, and Swagger)
 app.MapCarter(); // Map the Carter endpoints
