@@ -4,8 +4,7 @@ var assembly = typeof(Program).Assembly;
 
 // Health checks setup
 builder.Services.AddHealthChecks()
-    .AddNpgSql(builder.Configuration.GetConnectionString("Database")!)
-    .AddCheck("self", () => HealthCheckResult.Healthy());
+    .AddNpgSql(builder.Configuration.GetConnectionString("Database")!);
 
 // 1. Add services to the container.
 
@@ -39,8 +38,7 @@ builder.Services.AddMarten(options =>
 {
     options.Connection(builder.Configuration.GetConnectionString("Database")!); // Register Marten with the database connection string
 }).UseLightweightSessions(); // Use lightweight sessions for Marten
-if (builder.Environment.IsDevelopment())
-    builder.Services.InitializeMartenWith<CatalogInitialData>(); // Initialize Marten with some initial data if in development environment
+if (builder.Environment.IsDevelopment()) builder.Services.InitializeMartenWith<CatalogInitialData>(); // Initialize Marten with some initial data if in development environment
 
 // Exception handling setup
 builder.Services.AddExceptionHandler<CustomExceptionHandler>(); // Add custom exception handler
@@ -48,8 +46,6 @@ builder.Services.AddExceptionHandler<CustomExceptionHandler>(); // Add custom ex
 var app = builder.Build();
 
 // 2. Configure the HTTP request pipeline.
-
-
 
 // Global exception handler middleware setup
 app.UseExceptionHandler(_ => { }); // Add a global exception handler (could be customized)
