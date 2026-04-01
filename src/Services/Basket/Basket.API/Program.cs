@@ -1,12 +1,20 @@
-using BuildingBlocks.Exceptions.Handler;
+using HealthChecks.UI.Client;
 
 var assembly = typeof(Program).Assembly;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy())
+    .AddNpgSql(builder.Configuration.GetConnectionString("Database")!)
+    .AddRedis(builder.Configuration.GetConnectionString("Redis")!);
+
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(opt =>
+{
+    opt.OperationFilter<HealthCheckOperationFilter>(); // Add a custom operation filter to include /health in Swagger
+});
 
 builder.Services.AddMediatR(config =>
 {
@@ -29,6 +37,18 @@ builder.Services.AddMarten(opt =>
 }).UseLightweightSessions();
 
 builder.Services.AddScoped<IBasketRepository, BasketRepository>();
+builder.Services.Decorate<IBasketRepository, CachedBasketRepository>();
+//builder.Services.AddScoped<IBasketRepository>(provider =>
+//{
+//    var basketRepository = provider.GetRequiredService<BasketRepository>();
+//    return new CachedBasketRepository(basketRepository, provider.GetRequiredService<IDistributedCache>());
+//});
+
+builder.Services.AddStackExchangeRedisCache(opt =>
+{
+    opt.Configuration = builder.Configuration.GetConnectionString("Redis")!;
+    //opt.InstanceName = "BasketCache_";
+});
 
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 
@@ -46,6 +66,25 @@ if (app.Environment.IsDevelopment())
         options.RoutePrefix = string.Empty; // Makes Swagger UI the root page
     });
 }
+
+//app.UseHealthChecks("/health", new HealthCheckOptions
+//{
+//    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+//});
+app.MapGet("/health", async (HealthCheckService healthCheckService, HttpContext httpContext) =>
+    {
+        // Run the registered health checks manually
+        var report = await healthCheckService.CheckHealthAsync();
+
+        // Write the HealthCheck UI compatible response
+        await UIResponseWriter.WriteHealthCheckUIResponse(httpContext, report);
+
+        return Results.Empty;
+    })
+    .WithName("HealthCheck")
+    .WithTags("Health")
+    .Produces(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status503ServiceUnavailable);
 
 app.MapCarter();
 

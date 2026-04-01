@@ -1,4 +1,7 @@
-﻿global using Basket.API.Models;
+﻿global using BuildingBlocks.Exceptions.Handler;
+global using BuildingBlocks.Filters;
+global using Microsoft.Extensions.Diagnostics.HealthChecks;
+global using Basket.API.Models;
 global using Basket.API.Exceptions;
 global using Basket.API.Data;
 global using BuildingBlocks.CQRS;
