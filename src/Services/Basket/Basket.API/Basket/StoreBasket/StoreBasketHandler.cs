@@ -30,7 +30,7 @@ public class StoreBasketCommandHandler(IBasketRepository repository, DiscountPro
 
     private async Task DeductDiscount(ShoppingCart cart, CancellationToken cancellationToken)
     {
-        // ToDo: Communicate with Discount.gRPC and calculate latest prices of products into the shopping cart
+        // Communicate with Discount.gRPC and calculate latest prices of products into the shopping cart
         foreach (var item in cart.Items)
         {
             var coupon = await discountProto.GetDiscountAsync(new GetDiscountRequest { ProductName = item.ProductName }, cancellationToken: cancellationToken);
